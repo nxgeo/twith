@@ -34,15 +34,19 @@ class Twith:
 
         return response.json()
 
-    def _verify_credentials(self) -> dict:
-        return self._request(
+    def _get_user(self) -> str:
+        r = self._request(
             'GET', 'account/verify_credentials.json'
         )
 
-    def _get_status(self, status_id: str) -> dict:
-        return self._request(
+        return r['screen_name']
+
+    def _get_author(self, status_id: str) -> str:
+        r = self._request(
             'GET', f'statuses/show/{status_id}.json'
         )
+
+        return r['user']['screen_name']
 
     def _update_status(
             self,
@@ -64,11 +68,10 @@ class Twith:
             add_cont: bool = True
     ) -> list:
         if in_reply_to_status_id is not None:
-            status_author = self._get_status(
-                in_reply_to_status_id)['user']['screen_name']
-            user_context = self._verify_credentials()['screen_name']
-            if status_author != user_context:
-                text = f'@{status_author} {text}'
+            author = self._get_author(in_reply_to_status_id)
+            user = self._get_user()
+            if author != user:
+                text = f'@{author} {text}'
 
         status_max_length = 280
 
