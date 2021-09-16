@@ -14,18 +14,15 @@ class Twith:
             consumer_secret: str,
             access_token: str,
             access_token_secret: str
-    ):
+    ) -> None:
         self._auth_session = OAuth1Session(
             consumer_key, consumer_secret,
             access_token, access_token_secret
         )
 
-    def _request(
-            self, method, endpoint,
-            data=None
-    ):
+    def _request(self, method, endpoint, data=None):
         response = self._auth_session.request(
-            method, 'https://api.twitter.com/1.1/'+endpoint,
+            method, f'https://api.twitter.com/1.1/{endpoint}',
             data=data
         )
 
@@ -72,6 +69,7 @@ class Twith:
             user = self._get_user()
             if author != user:
                 text = f'@{author} {text}'
+            del author, user
 
         status_max_length = 280
 
