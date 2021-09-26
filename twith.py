@@ -1,5 +1,7 @@
 from textwrap import wrap
-from requests_oauthlib import OAuth1Session
+
+from requests import Session
+from requests_oauthlib import OAuth1
 
 
 class TwithError(Exception):
@@ -8,26 +10,18 @@ class TwithError(Exception):
 
 class Twith:
     """Turn long text into a thread on Twitter."""
-    def __init__(
-            self,
-            consumer_key: str,
-            consumer_secret: str,
-            access_token: str,
-            access_token_secret: str
-    ) -> None:
-        self._auth_session = OAuth1Session(
-            consumer_key, consumer_secret,
-            access_token, access_token_secret
-        )
+    def __init__(self, auth: OAuth1) -> None:
+        self.auth = auth
 
     def _request(self, method, endpoint, data=None):
-        response = self._auth_session.request(
-            method, f'https://api.twitter.com/1.1/{endpoint}',
-            data=data
-        )
+        with Session() as s:
+            response = s.request(
+                method, f'https://api.twitter.com/1.1/{endpoint}',
+                data=data, auth=self.auth
+            )
 
         if response.status_code != 200:
-            raise TwithError(response.json())
+            raise TwithError(response.json()['errors'])
 
         return response.json()
 
@@ -83,15 +77,15 @@ class Twith:
         statuses = wrap(text, status_max_length)
         statuses_last_index = len(statuses) - 1
 
-        tweets = []
         tweet_id = in_reply_to_status_id
+        tweets = []
 
         for i, status in enumerate(statuses):
             if add_cont and i != statuses_last_index:
                 status += indicator
             tweet = self._update_status(status, tweet_id)
-            tweets.append(tweet)
             if i != statuses_last_index:
                 tweet_id = tweet['id_str']
+            tweets.append(tweet)
 
         return tweets
