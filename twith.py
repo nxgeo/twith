@@ -10,15 +10,19 @@ class TwithError(Exception):
 
 class Twith:
     """Turn long text into a thread on Twitter."""
+    API_URL = 'https://api.twitter.com/1.1/'
+
     def __init__(self, auth: OAuth1) -> None:
-        self.auth = auth
+        self._session = Session()
+        self._session.auth = auth
 
     def _request(self, method, endpoint, data=None):
-        with Session() as s:
-            response = s.request(
-                method, f'https://api.twitter.com/1.1/{endpoint}',
-                data=data, auth=self.auth
+        try:
+            response = self._session.request(
+                method, Twith.API_URL+endpoint, data=data
             )
+        finally:
+            self._session.close()
 
         if response.status_code != 200:
             raise TwithError(response.json()['errors'])
